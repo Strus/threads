@@ -9,9 +9,9 @@
 
 #include "thread.h"
 #include "scheduler.h"
+#include "debug/logging.h"
 
 #include <malloc.h>
-#include <stdlib.h>
 
 int mythreads_start(mythread_func func, void* args)
 {
@@ -20,9 +20,10 @@ int mythreads_start(mythread_func func, void* args)
     thread->context.uc_stack.ss_sp = malloc(MYTHREADS_STACK_SIZE);
     thread->context.uc_stack.ss_size = MYTHREADS_STACK_SIZE;
     thread->context.uc_stack.ss_flags = 0;
+    thread->context.uc_link = scheduler_get_main_context();
     if(!thread->context.uc_stack.ss_sp)
     {
-        printf("Error creating new thread! malloc() failed!");
+        LOG("Error creating new thread! malloc() failed!");
         return -1;
     }
 

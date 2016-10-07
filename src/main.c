@@ -9,46 +9,44 @@
 
 #include "mythreads.h"
 #include "myscheduler.h"
+#include "debug/logging.h"
 
 #include <stdio.h>
 #include <unistd.h>
 
-#define LOOP_ITERATIONS 10
+#define LOOP_ITERATIONS 5
 
 void firstThread(void* data)
 {
-    printf("First thread start\n");
-    for(int i = 0; i < LOOP_ITERATIONS; i++)
+    LOG("First thread start");
+    for(int i = 0; i <= LOOP_ITERATIONS; i++)
     {
-        printf("T1 - %d\n", i);
-        fflush(stdout);
+        LOG("T1 - %d", i);
         sleep(1);
     }
-    printf("First thread end\n");
+    LOG("First thread end");
 }
 
 void secondThread(void* data)
 {
-    printf("Second thread start\n");
-    for(int i = 0; i < LOOP_ITERATIONS; i++)
+    LOG("Second thread start");
+    for(int i = 0; i <= LOOP_ITERATIONS; i++)
     {
-        printf("T2 - %d\n", i);
-        fflush(stdout);
+        LOG("T2 - %d", i);
         sleep(1);
     }
-    printf("Second thread end\n");
+    LOG("Second thread end");
 }
 
 void thirdThread(void* data)
 {
-    printf("Third thread start\n");
-    for(int i = 0; i < LOOP_ITERATIONS; i++)
+    LOG("Third thread start");
+    for(int i = 0; i <= LOOP_ITERATIONS; i++)
     {
-        printf("T3 - %d\n", i);
-        fflush(stdout);
+        LOG("T3 - %d", i);
         sleep(1);
     }
-    printf("Third thread end\n");
+    LOG("Third thread end");
 }
 
 int main()
@@ -60,7 +58,6 @@ int main()
     mythreads_start(thirdThread, NULL);
 
     myscheduler_start();
-
 //    threadcarousel_t carousel;
 //    carousel_init(&carousel);
 //
