@@ -18,26 +18,36 @@
 #include <ucontext.h>
 #include <signal.h>
 
-#define SCHEDULER_PREEMPTION_INTERVAL_USECONDS 1000
+#define SCHEDULER_PREEMPTION_INTERVAL_USECONDS 1
 
 /// @brief Represents scheduler.
 typedef struct
 {
     threadcarousel_t* carousel;
-    mythread_t* currentThread;
-    size_t numberOfThreads;
+    mythread_t* current_thread;
+    size_t number_of_threads;
     bool started;
-    ucontext_t context;
+    ucontext_t main_context;
 } scheduler_t;
 
 /// @brief Registers thread in scheduler.
 /// @param thread Thread to register.
 void scheduler_register_thread(mythread_t* thread);
 
+void scheduler_disable_preemption();
+
+void scheduler_enable_preemption();
+
 void scheduler_switch_to_next_thread();
+
+void scheduler_remove_dead_thread();
 
 void scheduler_alarm_signal_handler(int signal);
 
-ucontext_t* scheduler_get_main_context();
+ucontext_t* scheduler_get_end_context();
+
+void scheduler_current_thread_has_ended();
+
+int scheduler_kill_thread(int tid);
 
 #endif

@@ -20,61 +20,100 @@ scheduler_t scheduler;
 
 void myscheduler_init()
 {
-    scheduler.numberOfThreads = 0;
+    scheduler.number_of_threads = 0;
     scheduler.started = false;
     scheduler.carousel = (threadcarousel_t*) malloc(sizeof(threadcarousel_t));
-    scheduler.currentThread = NULL;
+    scheduler.current_thread = NULL;
     carousel_init(scheduler.carousel);
 }
 void myscheduler_start()
 {
-    signal(SIGALRM, scheduler_alarm_signal_handler);
-
     scheduler.started = true;
 
-    getcontext(&scheduler.context);
+    getcontext(&scheduler.main_context);
 
-    if(scheduler.numberOfThreads > 0)
+    if(scheduler.number_of_threads == 0)
     {
-        scheduler_switch_to_next_thread();
+        return;
     }
+
+    scheduler_remove_dead_thread();
+    scheduler_switch_to_next_thread();
 }
 
 void scheduler_register_thread(mythread_t* thread)
 {
-    scheduler.numberOfThreads++;
-    threadcarousel_node_t* newThreadNode = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
-    newThreadNode->thread = thread;
-    newThreadNode->thread->id = scheduler.numberOfThreads;
-    carousel_insert(scheduler.carousel, newThreadNode);
+    scheduler_disable_preemption();
+
+    scheduler.number_of_threads++;
+    threadcarousel_node_t* new_thread_node = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
+    new_thread_node->thread = thread;
+    new_thread_node->thread->id = scheduler.number_of_threads;
+    carousel_insert(scheduler.carousel, new_thread_node);
+
+    scheduler_enable_preemption();
+}
+
+void scheduler_disable_preemption()
+{
+    alarm(0);
+}
+
+void scheduler_enable_preemption()
+{
+    if(scheduler.started)
+    {
+        signal(SIGALRM, scheduler_alarm_signal_handler);
+//        ualarm(SCHEDULER_PREEMPTION_INTERVAL_USECONDS, 0);
+        alarm(SCHEDULER_PREEMPTION_INTERVAL_USECONDS);
+    }
 }
 
 void scheduler_switch_to_next_thread()
 {
+    scheduler_disable_preemption();
     if(!scheduler.started)
     {
         return;
     }
 
-    if(scheduler.currentThread)
+    if(scheduler.number_of_threads == 0)
     {
-        scheduler.currentThread->state = MYTHREAD_STATE_PREEMPTED;
-        getcontext(&scheduler.currentThread->context);
-        if(scheduler.currentThread->state == MYTHREAD_STATE_PREEMPTED)
+        setcontext(&scheduler.main_context);
+    }
+
+    if(scheduler.current_thread)
+    {
+        scheduler.current_thread->state = MYTHREAD_STATE_PREEMPTED;
+        getcontext(&scheduler.current_thread->context);
+        if(scheduler.current_thread->state == MYTHREAD_STATE_PREEMPTED)
         {
             carousel_switch_to_next(scheduler.carousel);
         }
         else
         {
+            scheduler_enable_preemption();
             return;
         }
     }
-    scheduler.currentThread = scheduler.carousel->current->thread;
-    scheduler.currentThread->state = MYTHREAD_STATE_ACTIVE;
+    scheduler.current_thread = scheduler.carousel->current->thread;
+    scheduler.current_thread->state = MYTHREAD_STATE_ACTIVE;
 
-    ualarm(SCHEDULER_PREEMPTION_INTERVAL_USECONDS, 0);
+    scheduler_enable_preemption();
 
-    setcontext(&scheduler.currentThread->context);
+    setcontext(&scheduler.current_thread->context);
+}
+
+void scheduler_remove_dead_thread()
+{
+    scheduler_disable_preemption();
+
+    if(scheduler.current_thread && scheduler.current_thread->state == MYTHREAD_STATE_ACTIVE)
+    {
+        scheduler_current_thread_has_ended();
+    }
+
+    scheduler_enable_preemption();
 }
 
 void scheduler_alarm_signal_handler(int signal)
@@ -87,7 +126,49 @@ void scheduler_alarm_signal_handler(int signal)
     scheduler_switch_to_next_thread();
 }
 
-ucontext_t* scheduler_get_main_context()
+ucontext_t* scheduler_get_end_context()
 {
-    return &scheduler.context;
+    return &scheduler.main_context;
 }
+
+void scheduler_current_thread_has_ended()
+{
+    scheduler_disable_preemption();
+
+    scheduler.number_of_threads--;
+    carousel_remove(scheduler.carousel, scheduler.carousel->current);
+    scheduler.current_thread = NULL;
+    scheduler_switch_to_next_thread();
+
+    scheduler_enable_preemption();
+}
+
+int scheduler_kill_thread(int tid)
+{
+    scheduler_disable_preemption();
+
+    if(scheduler.current_thread->id == tid)
+    {
+        scheduler_current_thread_has_ended();
+        return 0;
+    }
+
+    scheduler.number_of_threads--;
+    threadcarousel_node_t* thread_to_kill = carousel_find_by_id(scheduler.carousel, tid);
+    if(thread_to_kill == NULL)
+    {
+        LOG("Invalid thread id. Nothing to kill.");
+        return -1;
+    }
+    if(scheduler.current_thread == thread_to_kill->thread)
+    {
+        scheduler.current_thread = NULL;
+    }
+    carousel_remove(scheduler.carousel, thread_to_kill);
+    scheduler_switch_to_next_thread();
+
+    scheduler_enable_preemption();
+
+    return 0;
+}
+

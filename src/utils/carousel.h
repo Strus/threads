@@ -22,7 +22,6 @@ typedef struct carousel_node
 /// @brief Represents carousel (circular linked list)
 typedef struct carousel
 {
-    threadcarousel_node_t* head;
     threadcarousel_node_t* tail;
     threadcarousel_node_t* current;
 } threadcarousel_t;
@@ -40,6 +39,8 @@ void carousel_insert(threadcarousel_t* carousel, threadcarousel_node_t* node);
 /// @param carousel Carousel to remove element.
 /// @param node Node to be removed.
 void carousel_remove(threadcarousel_t* carousel, threadcarousel_node_t* node);
+
+threadcarousel_node_t* carousel_find_by_id(threadcarousel_t* carousel, int tid);
 
 void carousel_switch_to_next(threadcarousel_t* carousel);
 

@@ -25,7 +25,7 @@ enum mythread_state
 
 typedef struct
 {
-    int id;
+    unsigned int id;
     ucontext_t context;
     mythread_func func;
     enum mythread_state state;

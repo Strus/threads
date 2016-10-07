@@ -20,7 +20,7 @@ int mythreads_start(mythread_func func, void* args)
     thread->context.uc_stack.ss_sp = malloc(MYTHREADS_STACK_SIZE);
     thread->context.uc_stack.ss_size = MYTHREADS_STACK_SIZE;
     thread->context.uc_stack.ss_flags = 0;
-    thread->context.uc_link = scheduler_get_main_context();
+    thread->context.uc_link = scheduler_get_end_context();
     if(!thread->context.uc_stack.ss_sp)
     {
         LOG("Error creating new thread! malloc() failed!");
@@ -36,10 +36,13 @@ int mythreads_start(mythread_func func, void* args)
 
 int mythread_exit(void)
 {
+    scheduler_current_thread_has_ended();
+
     return 0;
 }
 
 int mythread_kill(int tid)
 {
-    return 0;
+    /// @todo segfault
+    return scheduler_kill_thread(tid);
 }
