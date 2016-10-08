@@ -9,9 +9,8 @@
 
 #include "scheduler.h"
 #include "debug/logging.h"
-#include "thread.h"
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -23,21 +22,23 @@ void myscheduler_init()
     scheduler.number_of_threads = 0;
     scheduler.started = false;
     scheduler.carousel = (threadcarousel_t*) malloc(sizeof(threadcarousel_t));
-    scheduler.current_thread = NULL;
     carousel_init(scheduler.carousel);
+    scheduler.current_thread = NULL;
+    scheduler.dead_thread = NULL;
 }
 void myscheduler_start()
 {
     scheduler.started = true;
 
-    getcontext(&scheduler.main_context);
-
-    if(scheduler.number_of_threads == 0)
+    if(getcontext(&scheduler.main_context) == -1)
     {
-        return;
+        LOG("Unable to obtain scheduler main context: %s\n Aborting!", strerror(errno));
+        abort();
     }
 
-    scheduler_remove_dead_thread();
+    // If any thread will end then it will return here, because every thread context is linked to scheduler main context.
+    // In case of such situation we remove this thread from scheduler.
+    scheduler_remove_returned_thread();
     scheduler_switch_to_next_thread();
 }
 
@@ -54,6 +55,11 @@ void scheduler_register_thread(mythread_t* thread)
     scheduler_enable_preemption();
 }
 
+mythread_t* scheduler_get_current_thread()
+{
+    return scheduler.current_thread;
+}
+
 void scheduler_disable_preemption()
 {
     alarm(0);
@@ -64,56 +70,83 @@ void scheduler_enable_preemption()
     if(scheduler.started)
     {
         signal(SIGALRM, scheduler_alarm_signal_handler);
-//        ualarm(SCHEDULER_PREEMPTION_INTERVAL_USECONDS, 0);
-        alarm(SCHEDULER_PREEMPTION_INTERVAL_USECONDS);
+        ualarm(SCHEDULER_PREEMPTION_INTERVAL_USECONDS, 0);
     }
 }
 
 void scheduler_switch_to_next_thread()
 {
     scheduler_disable_preemption();
-    if(!scheduler.started)
+    if(!scheduler.started || scheduler.number_of_threads == 0)
     {
         return;
     }
 
-    if(scheduler.number_of_threads == 0)
-    {
-        setcontext(&scheduler.main_context);
-    }
+    scheduler_remove_dead_thread();
 
     if(scheduler.current_thread)
     {
         scheduler.current_thread->state = MYTHREAD_STATE_PREEMPTED;
-        getcontext(&scheduler.current_thread->context);
-        if(scheduler.current_thread->state == MYTHREAD_STATE_PREEMPTED)
+
+        // Save current thread context. Thread will start from here next time.
+        if(getcontext(&scheduler.current_thread->context) == -1)
         {
-            carousel_switch_to_next(scheduler.carousel);
+            LOG("Unable to save current thread context: %s\n Aborting!", strerror(errno));
+            abort();
         }
-        else
+
+        // If thread is active it means that we just switched to it, so we return from function and continue execution.
+        if(scheduler.current_thread->state == MYTHREAD_STATE_ACTIVE)
         {
-            scheduler_enable_preemption();
             return;
         }
+
+        carousel_switch_to_next(scheduler.carousel);
     }
     scheduler.current_thread = scheduler.carousel->current->thread;
     scheduler.current_thread->state = MYTHREAD_STATE_ACTIVE;
 
     scheduler_enable_preemption();
 
-    setcontext(&scheduler.current_thread->context);
+    LOG("Next thread will be: %d", scheduler.current_thread->id);
+    if(setcontext(&scheduler.current_thread->context) == -1)
+    {
+        LOG("Unable to set thread context: %s\n Aborting!", strerror(errno));
+        abort();
+    }
 }
 
 void scheduler_remove_dead_thread()
 {
-    scheduler_disable_preemption();
-
-    if(scheduler.current_thread && scheduler.current_thread->state == MYTHREAD_STATE_ACTIVE)
+    if(scheduler.dead_thread == NULL)
     {
-        scheduler_current_thread_has_ended();
+        return;
     }
 
-    scheduler_enable_preemption();
+    threadcarousel_node_t* node_to_remove = carousel_find_by_id(scheduler.carousel, scheduler.dead_thread->id);
+    if(node_to_remove == NULL)
+    {
+        LOG("Cannot remove dead thread because it does not exists in carousel. Aborting because something went horribly wrong.");
+        abort();
+    }
+
+    carousel_remove(scheduler.carousel, node_to_remove);
+    if(scheduler.dead_thread == scheduler.current_thread)
+    {
+        scheduler.current_thread = NULL;
+    }
+    scheduler.dead_thread = NULL;
+    scheduler.number_of_threads--;
+}
+
+void scheduler_remove_returned_thread()
+{
+    if(scheduler.current_thread && scheduler.current_thread->state == MYTHREAD_STATE_ACTIVE)
+    {
+        LOG("Thread with id = %d has ended. Removing from carousel.", scheduler.current_thread->id);
+        scheduler.dead_thread = scheduler.current_thread;
+        scheduler_remove_dead_thread();
+    }
 }
 
 void scheduler_alarm_signal_handler(int signal)
@@ -126,49 +159,26 @@ void scheduler_alarm_signal_handler(int signal)
     scheduler_switch_to_next_thread();
 }
 
-ucontext_t* scheduler_get_end_context()
+ucontext_t* scheduler_get_main_context()
 {
     return &scheduler.main_context;
-}
-
-void scheduler_current_thread_has_ended()
-{
-    scheduler_disable_preemption();
-
-    scheduler.number_of_threads--;
-    carousel_remove(scheduler.carousel, scheduler.carousel->current);
-    scheduler.current_thread = NULL;
-    scheduler_switch_to_next_thread();
-
-    scheduler_enable_preemption();
 }
 
 int scheduler_kill_thread(int tid)
 {
     scheduler_disable_preemption();
 
-    if(scheduler.current_thread->id == tid)
-    {
-        scheduler_current_thread_has_ended();
-        return 0;
-    }
-
-    scheduler.number_of_threads--;
-    threadcarousel_node_t* thread_to_kill = carousel_find_by_id(scheduler.carousel, tid);
-    if(thread_to_kill == NULL)
+    threadcarousel_node_t* node_to_kill = carousel_find_by_id(scheduler.carousel, tid);
+    if(node_to_kill == NULL)
     {
         LOG("Invalid thread id. Nothing to kill.");
         return -1;
     }
-    if(scheduler.current_thread == thread_to_kill->thread)
-    {
-        scheduler.current_thread = NULL;
-    }
-    carousel_remove(scheduler.carousel, thread_to_kill);
+    scheduler.dead_thread = node_to_kill->thread;
     scheduler_switch_to_next_thread();
 
     scheduler_enable_preemption();
 
-    return 0;
+    return 0; // just to suppress warning
 }
 

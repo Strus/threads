@@ -16,18 +16,22 @@
 
 #define MYTHREADS_STACK_SIZE 1024*64 //< 64kB stack
 
+/// @brief Defines thread state
+///        MYTHREAD_STATE_NOT_STARTED - thread was created but never started yet
+///        MYTHREAD_STATE_ACTIVE - thread is processed now
+///        MYTHREAD_STATE_PREEMPTED - thread was preemted now
 enum mythread_state
 {
+    MYTHREAD_STATE_NOT_STARTED,
     MYTHREAD_STATE_ACTIVE,
-    MYTHREAD_STATE_PREEMPTED,
-    MYTHREAD_STATE_DEAD
+    MYTHREAD_STATE_PREEMPTED
 };
 
+/// @brief Represents thread.
 typedef struct
 {
     unsigned int id;
     ucontext_t context;
-    mythread_func func;
     enum mythread_state state;
 } mythread_t;
 

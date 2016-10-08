@@ -8,11 +8,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "carousel.h"
+#include "debug/logging.h"
 
 #include <malloc.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <thread.h>
 
 void carousel_init(threadcarousel_t* carousel)
 {
@@ -39,21 +37,22 @@ void carousel_insert(threadcarousel_t* carousel, threadcarousel_node_t* node)
 void carousel_remove(threadcarousel_t* carousel, threadcarousel_node_t* node)
 {
     threadcarousel_node_t* temp = node->next;
-    bool node_is_tail = (node == carousel->tail);
-    bool node_is_current = (node == carousel->current);
-    node->thread = node->next->thread;
+    // node to delete is becoming next node, which will be freed at the end.
+    node->thread = temp->thread;
     node->next = temp->next;
-    free(temp);
 
-    if(node_is_tail)
+    // temp will be deleted at the end, so we need to switch tail and current pointers
+    // if they are pointing on temp right now.
+    if(carousel->tail == temp)
     {
         carousel->tail = node;
     }
-
-    if(node_is_current)
+    if(carousel->current == temp)
     {
         carousel->current = node;
     }
+
+    free(temp);
 }
 
 threadcarousel_node_t* carousel_find_by_id(threadcarousel_t* carousel, int tid)
@@ -67,9 +66,9 @@ threadcarousel_node_t* carousel_find_by_id(threadcarousel_t* carousel, int tid)
 
     for(threadcarousel_node_t* iter = carousel->tail->next; iter != carousel->tail; iter = iter->next)
     {
-        if (temp->thread->id == tid)
+        if (iter->thread->id == tid)
         {
-            return temp;
+            return iter;
         }
     }
 
@@ -79,16 +78,4 @@ threadcarousel_node_t* carousel_find_by_id(threadcarousel_t* carousel, int tid)
 void carousel_switch_to_next(threadcarousel_t* carousel)
 {
     carousel->current = carousel->current->next;
-}
-
-void carousel_dump(threadcarousel_t* carousel)
-{
-    /// @todo iterator
-    threadcarousel_node_t* temp = carousel->tail;
-    do
-    {
-        printf("%d\n", temp->thread->id);
-        temp = temp->next;
-    }while(temp != carousel->tail);
-    printf("\n");
 }

@@ -40,12 +40,15 @@ void carousel_insert(threadcarousel_t* carousel, threadcarousel_node_t* node);
 /// @param node Node to be removed.
 void carousel_remove(threadcarousel_t* carousel, threadcarousel_node_t* node);
 
+/// @brief Search for thread with given id in carousel.
+/// @param carousel Carousel to find in.
+/// @param tid Id of the thread to find.
+/// @return Pointer to found thread
+///         NULL if thread of given id is not found.
 threadcarousel_node_t* carousel_find_by_id(threadcarousel_t* carousel, int tid);
 
+/// @brief Switches current node to next node in carousel.
+/// @param carousel Carousel to switch.
 void carousel_switch_to_next(threadcarousel_t* carousel);
-
-/// @brief Debug function that prints carousel into console.
-/// @param carousel Carosel to print.
-void carousel_dump(threadcarousel_t* carousel);
 
 #endif

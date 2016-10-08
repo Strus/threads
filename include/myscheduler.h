@@ -13,7 +13,7 @@
 /// @brief Initializes simple scheduler based on round-robin policy.
 void myscheduler_init();
 
-/// @brief Starts simple scheduler.
+/// @brief Starts simple scheduler based on round-robin policy.
 void myscheduler_start();
 
 #endif

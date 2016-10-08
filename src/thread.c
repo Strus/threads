@@ -12,20 +12,22 @@
 #include "debug/logging.h"
 
 #include <malloc.h>
+#include <errno.h>
+#include <string.h>
 
 int mythreads_start(mythread_func func, void* args)
 {
     mythread_t* thread = (mythread_t*)malloc(sizeof(mythread_t));
-    getcontext(&thread->context);
+    if(getcontext(&thread->context) == -1)
+    {
+        LOG("Error while obtaining thread contex: %s", strerror(errno));
+        free(thread);
+        return 0;
+    }
     thread->context.uc_stack.ss_sp = malloc(MYTHREADS_STACK_SIZE);
     thread->context.uc_stack.ss_size = MYTHREADS_STACK_SIZE;
-    thread->context.uc_stack.ss_flags = 0;
-    thread->context.uc_link = scheduler_get_end_context();
-    if(!thread->context.uc_stack.ss_sp)
-    {
-        LOG("Error creating new thread! malloc() failed!");
-        return -1;
-    }
+    thread->context.uc_link = scheduler_get_main_context();
+    thread->state = MYTHREAD_STATE_NOT_STARTED;
 
     makecontext(&thread->context, (void (*)(void))func, 1, args);
 
@@ -36,13 +38,10 @@ int mythreads_start(mythread_func func, void* args)
 
 int mythread_exit(void)
 {
-    scheduler_current_thread_has_ended();
-
-    return 0;
+    return scheduler_kill_thread(scheduler_get_current_thread()->id);
 }
 
 int mythread_kill(int tid)
 {
-    /// @todo segfault
     return scheduler_kill_thread(tid);
 }
