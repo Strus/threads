@@ -7,7 +7,6 @@
 ///
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <unistd.h>
 #include "mythreads.h"
 #include "myscheduler.h"
 #include "debug/logging.h"
