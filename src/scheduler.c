@@ -22,8 +22,12 @@ void myscheduler_init()
 {
     scheduler.number_of_threads = 0;
     scheduler.started = false;
+
     scheduler.carousel = (threadcarousel_t*) malloc(sizeof(threadcarousel_t));
     carousel_init(scheduler.carousel);
+    scheduler.pending_carousel = (threadcarousel_t*) malloc(sizeof(threadcarousel_t));
+    carousel_init(scheduler.pending_carousel);
+
     scheduler.current_thread = NULL;
     scheduler.dead_thread = NULL;
 }
@@ -154,6 +158,31 @@ void scheduler_remove_returned_thread()
     }
 
     scheduler_enable_preemption();
+}
+
+void scheduler_make_current_thread_pending()
+{
+    scheduler.current_thread->state = MYTHREAD_STATE_PENDING;
+
+    threadcarousel_node_t* temp = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
+    temp->thread = scheduler.current_thread;
+    carousel_insert(scheduler.pending_carousel, temp);
+    carousel_remove(scheduler.carousel, scheduler.carousel->current);
+
+    scheduler.current_thread = NULL;
+}
+
+void scheduler_remove_one_thread_from_pending_list()
+{
+    if(scheduler.pending_carousel->tail == NULL)
+    {
+        return;
+    }
+    threadcarousel_node_t* temp = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
+    temp->thread = scheduler.pending_carousel->tail->thread;
+
+    carousel_insert(scheduler.carousel, temp);
+    carousel_remove(scheduler.pending_carousel, scheduler.pending_carousel->tail);
 }
 
 void scheduler_alarm_signal_handler(int signal)

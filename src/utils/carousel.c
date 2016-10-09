@@ -36,6 +36,15 @@ void carousel_insert(threadcarousel_t* carousel, threadcarousel_node_t* node)
 
 void carousel_remove(threadcarousel_t* carousel, threadcarousel_node_t* node)
 {
+    // we have only one node and we are removing it
+    if(node->next == node)
+    {
+        free(node);
+        carousel->tail = NULL;
+        carousel->current = NULL;
+        return;
+    }
+
     threadcarousel_node_t* temp = node->next;
     // node to delete is becoming next node, which will be freed at the end.
     node->thread = temp->thread;

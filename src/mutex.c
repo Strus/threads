@@ -39,11 +39,10 @@ int mymutex_lock(mymutex_t* mutex)
             mutex->owner->priority = scheduler_get_current_thread()->priority;
         }
 
+        scheduler_make_current_thread_pending();
+
         // Switch to next thread. Current thread context will be saved here.
         scheduler_switch_to_next_thread();
-
-        // Scheduler switched context to this thread again, so we will try to lock mutex again.
-        mymutex_lock(mutex);
     }
 
     mutex->locked = true;
@@ -67,11 +66,12 @@ int mymutex_unlock(mymutex_t* mutex)
                     , scheduler_get_current_thread()->id
                     , mutex->owner->id);
 
+        // Make current thread pending, so he will be not take into consideration during next preemption
+        // until mutex will be unlocked
+        scheduler_make_current_thread_pending();
+
         // Switch to next thread. Current thread context will be saved here.
         scheduler_switch_to_next_thread();
-
-        // Scheduler switched context to this thread again, so we will try to unlock mutex again.
-        mymutex_unlock(mutex);
     }
 
     if(!mutex->locked)
@@ -83,6 +83,9 @@ int mymutex_unlock(mymutex_t* mutex)
     mutex->locked = false;
     mutex->owner->priority = mutex->owner_basic_priority;
     mutex->owner = NULL;
+
+    // Mutex is unlocked, so we remove one thread from pending list and move it to scheduler carousel.
+    scheduler_remove_one_thread_from_pending_list();
 
     scheduler_enable_preemption();
 

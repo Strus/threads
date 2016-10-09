@@ -20,11 +20,13 @@
 ///        MYTHREAD_STATE_NOT_STARTED - thread was created but never started yet
 ///        MYTHREAD_STATE_ACTIVE - thread is processed now
 ///        MYTHREAD_STATE_PREEMPTED - thread was preemted now
+///        MYTHREAD_STATE_PENDING - thread is pending on mutex
 enum mythread_state
 {
     MYTHREAD_STATE_NOT_STARTED,
     MYTHREAD_STATE_ACTIVE,
-    MYTHREAD_STATE_PREEMPTED
+    MYTHREAD_STATE_PREEMPTED,
+    MYTHREAD_STATE_PENDING
 };
 
 /// @brief Represents thread.

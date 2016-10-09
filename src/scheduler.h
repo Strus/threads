@@ -24,6 +24,7 @@
 typedef struct
 {
     threadcarousel_t* carousel;
+    threadcarousel_t* pending_carousel;
     mythread_t* current_thread;
     mythread_t* dead_thread;
     unsigned int number_of_threads;
@@ -53,6 +54,12 @@ void scheduler_remove_dead_thread();
 
 /// @brief Removes thread that ended on it's own.
 void scheduler_remove_returned_thread();
+
+/// @brief Makes current thread pending. Removes it from carousel and inserts it in pending threads' carousel.
+void scheduler_make_current_thread_pending();
+
+/// @brief Removes first thread from pending threads' carousel and inserts it into carousel.
+void scheduler_remove_one_thread_from_pending_list();
 
 /// @brief Handler for alarm signal. Switches scheduler to next thread.
 /// @param signal Signal number.
