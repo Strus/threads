@@ -144,12 +144,16 @@ void scheduler_remove_dead_thread()
 
 void scheduler_remove_returned_thread()
 {
+    scheduler_disable_preemption();
+
     if(scheduler.current_thread && scheduler.current_thread->state == MYTHREAD_STATE_ACTIVE)
     {
         LOG("Thread with id = %d has ended. Removing from carousel.", scheduler.current_thread->id);
         scheduler.dead_thread = scheduler.current_thread;
         scheduler_remove_dead_thread();
     }
+
+    scheduler_enable_preemption();
 }
 
 void scheduler_alarm_signal_handler(int signal)
