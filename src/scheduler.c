@@ -9,6 +9,7 @@
 
 #include "scheduler.h"
 #include "debug/logging.h"
+#include "thread.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -50,6 +51,8 @@ void scheduler_register_thread(mythread_t* thread)
     threadcarousel_node_t* new_thread_node = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
     new_thread_node->thread = thread;
     new_thread_node->thread->id = scheduler.number_of_threads;
+    new_thread_node->thread->state = MYTHREAD_STATE_NOT_STARTED;
+    new_thread_node->thread->priority = 0;
     carousel_insert(scheduler.carousel, new_thread_node);
 
     scheduler_enable_preemption();

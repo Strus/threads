@@ -11,6 +11,7 @@
 #define THREADS_MYSCHEDULER_H
 
 /// @brief Initializes simple scheduler based on round-robin policy.
+/// @note This function should be called before starting any mythread and before starting scheduler.
 void myscheduler_init();
 
 /// @brief Starts simple scheduler based on round-robin policy.

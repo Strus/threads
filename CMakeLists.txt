@@ -18,7 +18,7 @@ set(sources
         src/scheduler.h
         src/utils/carousel.c
         src/utils/carousel.h
-        src/debug/logging.h)
+        src/debug/logging.h include/mymutex.h src/mutex.c)
 
 add_executable(${APP_NAME} ${sources})
 

@@ -28,11 +28,12 @@ enum mythread_state
 };
 
 /// @brief Represents thread.
-typedef struct
+typedef struct thread
 {
     unsigned int id;
     ucontext_t context;
     enum mythread_state state;
+    int priority;
 } mythread_t;
 
 #endif

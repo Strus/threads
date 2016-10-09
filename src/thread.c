@@ -27,7 +27,6 @@ int mythreads_start(mythread_func func, void* args)
     thread->context.uc_stack.ss_sp = malloc(MYTHREADS_STACK_SIZE);
     thread->context.uc_stack.ss_size = MYTHREADS_STACK_SIZE;
     thread->context.uc_link = scheduler_get_main_context();
-    thread->state = MYTHREAD_STATE_NOT_STARTED;
 
     makecontext(&thread->context, (void (*)(void))func, 1, args);
 

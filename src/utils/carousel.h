@@ -26,7 +26,8 @@ typedef struct carousel
     threadcarousel_node_t* current;
 } threadcarousel_t;
 
-/// @brief Initalizes carousel. Every carousel must be initalized first.
+/// @brief Initalizes carousel.
+/// @note Every carousel must be initalized first with this function.
 /// @param carousel Carousel to initalize.
 void carousel_init(threadcarousel_t* carousel);
 
