@@ -11,14 +11,17 @@ include_directories(src)
 set(sources
         include/mythreads.h
         include/myscheduler.h
+        include/mymutex.h
         src/main.c
         src/thread.c
         src/thread.h
         src/scheduler.c
         src/scheduler.h
+        src/mutex.c
         src/utils/carousel.c
         src/utils/carousel.h
-        src/debug/logging.h include/mymutex.h src/mutex.c)
+        src/debug/logging.h
+        )
 
 add_executable(${APP_NAME} ${sources})
 
