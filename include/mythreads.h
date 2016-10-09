@@ -25,8 +25,9 @@ int mythread_exit(void);
 
 /// @brief Ends thread of given id.
 /// @param tid Id of the thread to end.
-/// @return Nothing when successful
+/// @return 0 when successful
 ///         -1 on error.
+///         Nothing if successful and tid is an id of thread that performs mythread_kill.
 int mythread_kill(int tid);
 
 #endif

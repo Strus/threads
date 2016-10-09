@@ -177,11 +177,16 @@ int scheduler_kill_thread(int tid)
         LOG("Invalid thread id. Nothing to kill.");
         return -1;
     }
+
     scheduler.dead_thread = node_to_kill->thread;
-    scheduler_switch_to_next_thread();
+    // if we kill current thread then we switch to next one
+    if(scheduler_get_current_thread()->id == scheduler.dead_thread->id)
+    {
+        scheduler_switch_to_next_thread();
+    }
 
     scheduler_enable_preemption();
 
-    return 0; // just to suppress warning
+    return 0;
 }
 
