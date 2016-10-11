@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 project(threads)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -g -O0")
 set(EXECUTABLE_OUTPUT_PATH ../bin)
 set(APP_NAME threadsTestApp)
 
@@ -12,15 +12,15 @@ set(sources
         include/mythreads.h
         include/myscheduler.h
         include/mymutex.h
-        src/main.c
         src/thread.c
         src/thread.h
         src/scheduler.c
         src/scheduler.h
         src/mutex.c
-        src/utils/carousel.c
-        src/utils/carousel.h
-        src/debug/logging.h
+        src/carousel.c
+        src/carousel.h
+        src/logging.h
+        main.c
         )
 
 add_executable(${APP_NAME} ${sources})

@@ -10,11 +10,11 @@
 #include "mythreads.h"
 #include "myscheduler.h"
 #include "mymutex.h"
-#include "debug/logging.h"
+#include "logging.h"
 
 #define LOOP_ITERATIONS 1000000
 #define LOG_ITERATIONS 0
-#define USE_MUTEX 1
+#define USE_MUTEX 0
 
 mymutex_t mutex;
 
@@ -41,7 +41,7 @@ int main()
 
 void firstThread(void* data)
 {
-    LOG("First thread start");
+    INFO("First thread start");
 
 #if USE_MUTEX
     mymutex_lock(&mutex);
@@ -51,7 +51,7 @@ void firstThread(void* data)
     for(int i = 0; i <= LOOP_ITERATIONS; i++)
     {
 #if LOG_ITERATIONS
-        LOG("T1 - %d", i);
+        INFO("T1 - %d", i);
 #endif
     }
 
@@ -59,12 +59,12 @@ void firstThread(void* data)
     mymutex_unlock(&mutex);
 #endif
 
-    LOG("First thread end");
+    INFO("First thread end");
 }
 
 void secondThread(void* data)
 {
-    LOG("Second thread start");
+    INFO("Second thread start");
 
 #if USE_MUTEX
     mymutex_lock(&mutex);
@@ -73,17 +73,17 @@ void secondThread(void* data)
     for(int i = 0; i <= LOOP_ITERATIONS; i++)
     {
 #if LOG_ITERATIONS
-        LOG("T2 - %d", i);
+        INFO("T2 - %d", i);
 #endif
         if(i == 100)
         {
-            LOG("Second thread end prematurely");
+            INFO("Second thread will end prematurely");
             #if USE_MUTEX
                 mymutex_unlock(&mutex);
             #endif
             if(mythread_exit() == -1)
             {
-                LOG("Failed to exit from second thread.");
+                INFO("Failed to exit from second thread.");
             }
         }
     }
@@ -92,12 +92,12 @@ void secondThread(void* data)
     mymutex_unlock(&mutex);
 #endif
 
-    LOG("Second thread end");
+    INFO("Second thread end");
 }
 
 void thirdThread(void* data)
 {
-    LOG("Third thread start");
+    INFO("Third thread start");
 
 #if USE_MUTEX
     mymutex_lock(&mutex);
@@ -106,14 +106,18 @@ void thirdThread(void* data)
     for(int i = 0; i <= LOOP_ITERATIONS - 2; i++)
     {
 #if LOG_ITERATIONS
-        LOG("T3 - %d", i);
+        INFO("T3 - %d", i);
 #endif
         if(i == 500)
         {
-            LOG("First thread killed");
+            INFO("Third thread tries to kill first thread...");
             if(mythread_kill(1) == -1)
             {
-                LOG("Failed to kill first thread.");
+                INFO("Failed to kill first thread.");
+            }
+            else
+            {
+                INFO("First thread killed");
             }
         }
     }
@@ -122,12 +126,12 @@ void thirdThread(void* data)
     mymutex_unlock(&mutex);
 #endif
 
-    LOG("Third thread end");
+    INFO("Third thread end");
 }
 
 void fourthThread(void* data)
 {
-    LOG("Fourth thread start");
+    INFO("Fourth thread start");
 
 #if USE_MUTEX
     mymutex_lock(&mutex);
@@ -136,7 +140,7 @@ void fourthThread(void* data)
     for(int i = 0; i <= LOOP_ITERATIONS / 2; i++)
     {
 #if LOG_ITERATIONS
-        LOG("T4 - %d", i);
+        INFO("T4 - %d", i);
 #endif
     }
 
@@ -144,5 +148,5 @@ void fourthThread(void* data)
     mymutex_unlock(&mutex);
 #endif
 
-    LOG("Fourth thread end");
+    INFO("Fourth thread end");
 }

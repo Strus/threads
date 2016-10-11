@@ -8,7 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "scheduler.h"
-#include "debug/logging.h"
+#include "logging.h"
 #include "thread.h"
 
 #include <stdlib.h>
@@ -24,8 +24,20 @@ void myscheduler_init()
     scheduler.started = false;
 
     scheduler.carousel = (threadcarousel_t*) malloc(sizeof(threadcarousel_t));
-    carousel_init(scheduler.carousel);
+    if(scheduler.carousel == NULL)
+    {
+        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
+        abort();
+    }
+
     scheduler.pending_carousel = (threadcarousel_t*) malloc(sizeof(threadcarousel_t));
+    if(scheduler.pending_carousel == NULL)
+    {
+        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
+        abort();
+    }
+
+    carousel_init(scheduler.carousel);
     carousel_init(scheduler.pending_carousel);
 
     scheduler.current_thread = NULL;
@@ -33,11 +45,12 @@ void myscheduler_init()
 }
 void myscheduler_start()
 {
+    INFO("Starting scheduler with %d threads", scheduler.number_of_threads);
     scheduler.started = true;
 
     if(getcontext(&scheduler.main_context) == -1)
     {
-        LOG("Unable to obtain scheduler main context: %s\n Aborting!", strerror(errno));
+        ERROR("Unable to obtain scheduler main context: %s\n Aborting!", strerror(errno));
         abort();
     }
 
@@ -45,6 +58,9 @@ void myscheduler_start()
     // In case of such situation we remove this thread from scheduler.
     scheduler_remove_returned_thread();
     scheduler_switch_to_next_thread();
+
+    free(scheduler.carousel);
+    free(scheduler.pending_carousel);
 }
 
 void scheduler_register_thread(mythread_t* thread)
@@ -53,11 +69,18 @@ void scheduler_register_thread(mythread_t* thread)
 
     scheduler.number_of_threads++;
     threadcarousel_node_t* new_thread_node = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
+    if(new_thread_node == NULL)
+    {
+        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
+        abort();
+    }
     new_thread_node->thread = thread;
     new_thread_node->thread->id = scheduler.number_of_threads;
     new_thread_node->thread->state = MYTHREAD_STATE_NOT_STARTED;
     new_thread_node->thread->priority = 0;
     carousel_insert(scheduler.carousel, new_thread_node);
+
+    INFO("New thread added, id: %d. Total threads: %d", new_thread_node->thread->id, scheduler.number_of_threads);
 
     scheduler_enable_preemption();
 }
@@ -98,7 +121,7 @@ void scheduler_switch_to_next_thread()
         // Save current thread context. Thread will start from here next time.
         if(getcontext(&scheduler.current_thread->context) == -1)
         {
-            LOG("Unable to save current thread context: %s\n Aborting!", strerror(errno));
+            ERROR("Unable to save current thread context: %s\n Aborting!", strerror(errno));
             abort();
         }
 
@@ -115,10 +138,10 @@ void scheduler_switch_to_next_thread()
 
     scheduler_enable_preemption();
 
-    LOG("Next thread will be: %d", scheduler.current_thread->id);
+    INFO("Next thread will be: %d", scheduler.current_thread->id);
     if(setcontext(&scheduler.current_thread->context) == -1)
     {
-        LOG("Unable to set thread context: %s\n Aborting!", strerror(errno));
+        ERROR("Unable to set thread context: %s\n Aborting!", strerror(errno));
         abort();
     }
 }
@@ -133,7 +156,7 @@ void scheduler_remove_dead_thread()
     threadcarousel_node_t* node_to_remove = carousel_find_by_id(scheduler.carousel, scheduler.dead_thread->id);
     if(node_to_remove == NULL)
     {
-        LOG("Cannot remove dead thread because it does not exists in carousel. Aborting because something went horribly wrong.");
+        ERROR("Cannot remove dead thread because it does not exists in carousel. Aborting because something went horribly wrong.");
         abort();
     }
 
@@ -152,7 +175,7 @@ void scheduler_remove_returned_thread()
 
     if(scheduler.current_thread && scheduler.current_thread->state == MYTHREAD_STATE_ACTIVE)
     {
-        LOG("Thread with id = %d has ended. Removing from carousel.", scheduler.current_thread->id);
+        INFO("Thread with id = %d has ended. Removing from carousel.", scheduler.current_thread->id);
         scheduler.dead_thread = scheduler.current_thread;
         scheduler_remove_dead_thread();
     }
@@ -165,7 +188,24 @@ void scheduler_make_current_thread_pending()
     scheduler.current_thread->state = MYTHREAD_STATE_PENDING;
 
     threadcarousel_node_t* temp = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
-    temp->thread = scheduler.current_thread;
+    if(temp == NULL)
+    {
+        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
+        abort();
+    }
+
+    temp->thread = (mythread_t*) malloc(sizeof(mythread_t));
+    if(temp->thread == NULL)
+    {
+        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
+        abort();
+    }
+    temp->thread->id = scheduler.current_thread->id;
+    temp->thread->context = scheduler.current_thread->context;
+    temp->thread->priority = scheduler.current_thread->priority;
+    temp->thread->state = scheduler.current_thread->state;
+
+    INFO("Thread with id: %d will be moved from active list to pending list in scheduler.", temp->thread->id);
     carousel_insert(scheduler.pending_carousel, temp);
     carousel_remove(scheduler.carousel, scheduler.carousel->current);
 
@@ -178,9 +218,27 @@ void scheduler_remove_one_thread_from_pending_list()
     {
         return;
     }
-    threadcarousel_node_t* temp = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
-    temp->thread = scheduler.pending_carousel->tail->thread;
 
+    threadcarousel_node_t* temp = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
+    if(temp == NULL)
+    {
+        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
+        abort();
+    }
+
+    temp->thread = (mythread_t*) malloc(sizeof(mythread_t));
+    if(temp->thread == NULL)
+    {
+        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
+        abort();
+    }
+
+    temp->thread->id = scheduler.pending_carousel->tail->thread->id;
+    temp->thread->context = scheduler.pending_carousel->tail->thread->context;
+    temp->thread->priority = scheduler.pending_carousel->tail->thread->priority;
+    temp->thread->state = scheduler.pending_carousel->tail->thread->state;
+
+    INFO("Thread with id: %d will be moved from pending list to active list in scheduler.", temp->thread->id);
     carousel_insert(scheduler.carousel, temp);
     carousel_remove(scheduler.pending_carousel, scheduler.pending_carousel->tail);
 }
@@ -207,7 +265,7 @@ int scheduler_kill_thread(int tid)
     threadcarousel_node_t* node_to_kill = carousel_find_by_id(scheduler.carousel, tid);
     if(node_to_kill == NULL)
     {
-        LOG("Invalid thread id. Nothing to kill.");
+        INFO("Invalid thread id. Nothing to kill.");
         return -1;
     }
 

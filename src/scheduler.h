@@ -12,7 +12,7 @@
 
 #include "myscheduler.h"
 #include "thread.h"
-#include "utils/carousel.h"
+#include "carousel.h"
 
 #include <stdbool.h>
 #include <ucontext.h>

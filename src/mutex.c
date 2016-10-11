@@ -12,7 +12,7 @@
 
 #include <stdlib.h>
 #include <mymutex.h>
-#include <debug/logging.h>
+#include <logging.h>
 
 void mymutext_init(mymutex_t* mutex)
 {
@@ -26,10 +26,10 @@ int mymutex_lock(mymutex_t* mutex)
 
     if(mutex->locked)
     {
-        LOG("Mutex already locked. Waiting.");
+        INFO("Mutex already locked. Waiting.");
         if(mutex->owner == scheduler_get_current_thread())
         {
-            LOG("Mutex cannot be locked twice by the same thread. Thread id: %d", scheduler_get_current_thread()->id);
+            INFO("Mutex cannot be locked twice by the same thread. Thread id: %d", scheduler_get_current_thread()->id);
             return -1;
         }
 
@@ -60,7 +60,7 @@ int mymutex_unlock(mymutex_t* mutex)
 
     if(mutex->owner != scheduler_get_current_thread())
     {
-        LOG("Mutex can only be unlocked by it's owner!\n"
+        INFO("Mutex can only be unlocked by it's owner!\n"
                     "    Current thread id: %d"
                     "    Owner id: %d"
                     , scheduler_get_current_thread()->id
@@ -76,7 +76,7 @@ int mymutex_unlock(mymutex_t* mutex)
 
     if(!mutex->locked)
     {
-        LOG("Cannot unlock not locked mutex.");
+        INFO("Cannot unlock not locked mutex.");
         return -1;
     }
 
