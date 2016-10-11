@@ -33,9 +33,10 @@ enum mythread_state
 typedef struct thread
 {
     unsigned int id;
-    ucontext_t context;
-    enum mythread_state state;
     int priority;
+    ucontext_t context;
+    char stack[MYTHREADS_STACK_SIZE];
+    enum mythread_state state;
 } mythread_t;
 
 #endif

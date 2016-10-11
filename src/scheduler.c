@@ -133,6 +133,22 @@ void scheduler_switch_to_next_thread()
 
         carousel_switch_to_next(scheduler.carousel);
     }
+
+    // This check and logic is needed because I allow to exit from thread with mythread_exit()
+    // in the middle of thread function.
+    // If we kill last thread with mythread_exit(), then no more threads are available and we should get back to
+    // scheduler main context (so where thread context would normally switch after returning from thread function).
+    if(scheduler.carousel->current == NULL)
+    {
+        INFO("No more threads in carousel, exiting.");
+        if(setcontext(&scheduler.main_context) == -1)
+        {
+            ERROR("Unable to set thread context: %s\n Aborting!", strerror(errno));
+            abort();
+        }
+        return;
+    }
+
     scheduler.current_thread = scheduler.carousel->current->thread;
     scheduler.current_thread->state = MYTHREAD_STATE_ACTIVE;
 

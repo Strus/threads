@@ -32,7 +32,7 @@ int mythreads_start(mythread_func func, void* args)
         return 0;
     }
 
-    thread->context.uc_stack.ss_sp = malloc(MYTHREADS_STACK_SIZE);
+    thread->context.uc_stack.ss_sp = thread->stack;
     thread->context.uc_stack.ss_size = MYTHREADS_STACK_SIZE;
     thread->context.uc_link = scheduler_get_main_context();
     if(thread->context.uc_stack.ss_sp == NULL)
