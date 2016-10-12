@@ -11,6 +11,9 @@
 #include "logging.h"
 
 #include <malloc.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
 
 void carousel_init(threadcarousel_t* carousel)
 {
@@ -64,6 +67,30 @@ void carousel_remove(threadcarousel_t* carousel, threadcarousel_node_t* node)
     }
 
     free(temp);
+}
+
+void carousel_move_to_another_carousel(threadcarousel_t* from, threadcarousel_t* to, threadcarousel_node_t* node)
+{
+    threadcarousel_node_t* temp = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
+    if(temp == NULL)
+    {
+        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
+        abort();
+    }
+
+    temp->thread = (mythread_t*) malloc(sizeof(mythread_t));
+    if(temp->thread == NULL)
+    {
+        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
+        abort();
+    }
+    temp->thread->id = node->thread->id;
+    temp->thread->context = node->thread->context;
+    temp->thread->priority = node->thread->priority;
+    temp->thread->state = node->thread->state;
+
+    carousel_insert(to, temp);
+    carousel_remove(from, node);
 }
 
 threadcarousel_node_t* carousel_find_by_id(threadcarousel_t* carousel, int tid)

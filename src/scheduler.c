@@ -203,27 +203,8 @@ void scheduler_make_current_thread_pending()
 {
     scheduler.current_thread->state = MYTHREAD_STATE_PENDING;
 
-    threadcarousel_node_t* temp = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
-    if(temp == NULL)
-    {
-        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
-        abort();
-    }
-
-    temp->thread = (mythread_t*) malloc(sizeof(mythread_t));
-    if(temp->thread == NULL)
-    {
-        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
-        abort();
-    }
-    temp->thread->id = scheduler.current_thread->id;
-    temp->thread->context = scheduler.current_thread->context;
-    temp->thread->priority = scheduler.current_thread->priority;
-    temp->thread->state = scheduler.current_thread->state;
-
-    INFO("Thread with id: %d will be moved from active list to pending list in scheduler.", temp->thread->id);
-    carousel_insert(scheduler.pending_carousel, temp);
-    carousel_remove(scheduler.carousel, scheduler.carousel->current);
+    INFO("Thread with id: %d will be moved from active list to pending list in scheduler.", scheduler.current_thread->id);
+    carousel_move_to_another_carousel(scheduler.carousel, scheduler.pending_carousel, scheduler.carousel->current);
 
     scheduler.current_thread = NULL;
 }
@@ -235,28 +216,8 @@ void scheduler_remove_one_thread_from_pending_list()
         return;
     }
 
-    threadcarousel_node_t* temp = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
-    if(temp == NULL)
-    {
-        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
-        abort();
-    }
-
-    temp->thread = (mythread_t*) malloc(sizeof(mythread_t));
-    if(temp->thread == NULL)
-    {
-        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
-        abort();
-    }
-
-    temp->thread->id = scheduler.pending_carousel->tail->thread->id;
-    temp->thread->context = scheduler.pending_carousel->tail->thread->context;
-    temp->thread->priority = scheduler.pending_carousel->tail->thread->priority;
-    temp->thread->state = scheduler.pending_carousel->tail->thread->state;
-
-    INFO("Thread with id: %d will be moved from pending list to active list in scheduler.", temp->thread->id);
-    carousel_insert(scheduler.carousel, temp);
-    carousel_remove(scheduler.pending_carousel, scheduler.pending_carousel->tail);
+    INFO("Thread with id: %d will be moved from active list to pending list in scheduler.", scheduler.pending_carousel->tail->thread->id);
+    carousel_move_to_another_carousel(scheduler.pending_carousel, scheduler.carousel, scheduler.pending_carousel->tail);
 }
 
 void scheduler_alarm_signal_handler(int signal)

@@ -41,6 +41,12 @@ void carousel_insert(threadcarousel_t* carousel, threadcarousel_node_t* node);
 /// @param node Node to be removed.
 void carousel_remove(threadcarousel_t* carousel, threadcarousel_node_t* node);
 
+/// @brief Moves node between carousels
+/// @param from Carousel which have node to move.
+/// @param to Destination carousel.
+/// @param node Node to move between carousels.
+void carousel_move_to_another_carousel(threadcarousel_t* from, threadcarousel_t* to, threadcarousel_node_t* node);
+
 /// @brief Search for thread with given id in carousel.
 /// @param carousel Carousel to find in.
 /// @param tid Id of the thread to find.
