@@ -9,7 +9,6 @@
 
 #include "scheduler.h"
 #include "logging.h"
-#include "thread.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -18,7 +17,7 @@
 
 scheduler_t scheduler;
 
-void myscheduler_init()
+int myscheduler_init()
 {
     scheduler.number_of_threads = 0;
     scheduler.started = false;
@@ -26,15 +25,16 @@ void myscheduler_init()
     scheduler.carousel = (threadcarousel_t*) malloc(sizeof(threadcarousel_t));
     if(scheduler.carousel == NULL)
     {
-        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
-        abort();
+        ERROR("malloc() failed: %s.", strerror(errno));
+        return -1;
     }
 
     scheduler.pending_carousel = (threadcarousel_t*) malloc(sizeof(threadcarousel_t));
     if(scheduler.pending_carousel == NULL)
     {
-        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
-        abort();
+        ERROR("malloc() failed: %s.", strerror(errno));
+        free(scheduler.carousel);
+        return -1;
     }
 
     carousel_init(scheduler.carousel);
@@ -42,17 +42,20 @@ void myscheduler_init()
 
     scheduler.current_thread = NULL;
     scheduler.dead_thread = NULL;
+
+    return 0;
 }
-void myscheduler_start()
+int myscheduler_start()
 {
     INFO("Starting scheduler with %d threads", scheduler.number_of_threads);
-    scheduler.started = true;
 
     if(getcontext(&scheduler.main_context) == -1)
     {
-        ERROR("Unable to obtain scheduler main context: %s\n Aborting!", strerror(errno));
-        abort();
+        ERROR("Unable to obtain scheduler main context: %s\n", strerror(errno));
+        return -1;
     }
+
+    scheduler.started = true;
 
     // If any thread will end then it will return here, because every thread context is linked to scheduler main context.
     // In case of such situation we remove this thread from scheduler.
@@ -61,19 +64,22 @@ void myscheduler_start()
 
     free(scheduler.carousel);
     free(scheduler.pending_carousel);
+
+    return 0;
 }
 
-void scheduler_register_thread(mythread_t* thread)
+int scheduler_register_thread(mythread_t* thread)
 {
     scheduler_disable_preemption();
 
-    scheduler.number_of_threads++;
     threadcarousel_node_t* new_thread_node = (threadcarousel_node_t*) malloc(sizeof(threadcarousel_node_t));
     if(new_thread_node == NULL)
     {
-        ERROR("malloc() failed: %s. Aborting!", strerror(errno));
-        abort();
+        ERROR("malloc() failed: %s.", strerror(errno));
+        return -1;
     }
+
+    scheduler.number_of_threads++;
     new_thread_node->thread = thread;
     new_thread_node->thread->id = scheduler.number_of_threads;
     new_thread_node->thread->state = MYTHREAD_STATE_NOT_STARTED;
@@ -83,6 +89,8 @@ void scheduler_register_thread(mythread_t* thread)
     INFO("New thread added, id: %d. Total threads: %d", new_thread_node->thread->id, scheduler.number_of_threads);
 
     scheduler_enable_preemption();
+
+    return 0;
 }
 
 mythread_t* scheduler_get_current_thread()

@@ -25,7 +25,11 @@ void fourthThread(void* data);
 
 int main()
 {
-    myscheduler_init();
+    if(myscheduler_init() == -1)
+    {
+        INFO("Failed to init scheduler. Exiting.");
+        return -1;
+    }
 
 #if USE_MUTEX
     mymutext_init(&mutex);
@@ -35,8 +39,7 @@ int main()
     mythreads_start(secondThread, NULL);
     mythreads_start(thirdThread, NULL);
 
-    myscheduler_start();
-    return 0;
+    return myscheduler_start();
 }
 
 void firstThread(void* data)

@@ -12,9 +12,11 @@
 
 /// @brief Initializes simple scheduler based on round-robin policy.
 /// @note This function should be called before starting any mythread and before starting scheduler.
-void myscheduler_init();
+/// @return 0 on success, -1 on error
+int myscheduler_init();
 
 /// @brief Starts simple scheduler based on round-robin policy.
-void myscheduler_start();
+/// @return 0 on succces, -1 on error
+int myscheduler_start();
 
 #endif

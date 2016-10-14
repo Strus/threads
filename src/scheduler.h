@@ -34,7 +34,7 @@ typedef struct
 
 /// @brief Registers thread in scheduler.
 /// @param thread Thread to register.
-void scheduler_register_thread(mythread_t* thread);
+int scheduler_register_thread(mythread_t* thread);
 
 /// @brief Returns current thread selected in scheduler.
 /// @return Current thread selected in scheduler.
