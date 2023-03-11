@@ -14,10 +14,15 @@
 
 /// @brief Prints formatted data to stdout using printf and flushes stdout buffer after that.
 /// @note Every log message is ended with EOL character.
-#define INFO(f_, ...) printf((f_"\n"), ##__VA_ARGS__); fflush(stdout)
+#define INFO(f_, ...)                                                                                                  \
+    printf((f_ "\n"), ##__VA_ARGS__);                                                                                  \
+    fflush(stdout)
 
-/// @brief Prints formated data with filename and line number at the beginning to stdout using printf and flushes stdout buffer after that.
+/// @brief Prints formated data with filename and line number at the beginning to stdout using printf and flushes stdout
+/// buffer after that.
 /// @note Every log message is ended with EOL character.
-#define ERROR(f_, ...) printf(("%s:%d "f_"\n"), __FILE__, __LINE__, ##__VA_ARGS__); fflush(stdout)
+#define ERROR(f_, ...)                                                                                                 \
+    printf(("%s:%d " f_ "\n"), __FILE__, __LINE__, ##__VA_ARGS__);                                                     \
+    fflush(stdout)
 
 #endif

@@ -7,10 +7,10 @@
 ///
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "mythreads.h"
-#include "myscheduler.h"
-#include "mymutex.h"
 #include "logging.h"
+#include "mymutex.h"
+#include "myscheduler.h"
+#include "mythreads.h"
 
 #define LOOP_ITERATIONS 1000000
 #define LOG_ITERATIONS 0
@@ -18,15 +18,13 @@
 
 mymutex_t mutex;
 
-void firstThread(void* data);
-void secondThread(void* data);
-void thirdThread(void* data);
-void fourthThread(void* data);
+void firstThread(void *data);
+void secondThread(void *data);
+void thirdThread(void *data);
+void fourthThread(void *data);
 
-int main()
-{
-    if(myscheduler_init() == -1)
-    {
+int main() {
+    if (myscheduler_init() == -1) {
         INFO("Failed to init scheduler. Exiting.");
         return -1;
     }
@@ -42,8 +40,7 @@ int main()
     return myscheduler_start();
 }
 
-void firstThread(void* data)
-{
+void firstThread(void *data) {
     INFO("First thread start");
 
 #if USE_MUTEX
@@ -51,8 +48,7 @@ void firstThread(void* data)
 #endif
 
     mythreads_start(fourthThread, NULL);
-    for(int i = 0; i <= LOOP_ITERATIONS; i++)
-    {
+    for (int i = 0; i <= LOOP_ITERATIONS; i++) {
 #if LOG_ITERATIONS
         INFO("T1 - %d", i);
 #endif
@@ -65,27 +61,23 @@ void firstThread(void* data)
     INFO("First thread end");
 }
 
-void secondThread(void* data)
-{
+void secondThread(void *data) {
     INFO("Second thread start");
 
 #if USE_MUTEX
     mymutex_lock(&mutex);
 #endif
 
-    for(int i = 0; i <= LOOP_ITERATIONS; i++)
-    {
+    for (int i = 0; i <= LOOP_ITERATIONS; i++) {
 #if LOG_ITERATIONS
         INFO("T2 - %d", i);
 #endif
-        if(i == 100)
-        {
+        if (i == 100) {
             INFO("Second thread will end prematurely");
-            #if USE_MUTEX
-                mymutex_unlock(&mutex);
-            #endif
-            if(mythread_exit() == -1)
-            {
+#if USE_MUTEX
+            mymutex_unlock(&mutex);
+#endif
+            if (mythread_exit() == -1) {
                 INFO("Failed to exit from second thread.");
             }
         }
@@ -98,28 +90,22 @@ void secondThread(void* data)
     INFO("Second thread end");
 }
 
-void thirdThread(void* data)
-{
+void thirdThread(void *data) {
     INFO("Third thread start");
 
 #if USE_MUTEX
     mymutex_lock(&mutex);
 #endif
 
-    for(int i = 0; i <= LOOP_ITERATIONS - 2; i++)
-    {
+    for (int i = 0; i <= LOOP_ITERATIONS - 2; i++) {
 #if LOG_ITERATIONS
         INFO("T3 - %d", i);
 #endif
-        if(i == 500)
-        {
+        if (i == 500) {
             INFO("Third thread tries to kill first thread...");
-            if(mythread_kill(1) == -1)
-            {
+            if (mythread_kill(1) == -1) {
                 INFO("Failed to kill first thread.");
-            }
-            else
-            {
+            } else {
                 INFO("First thread killed");
             }
         }
@@ -132,16 +118,14 @@ void thirdThread(void* data)
     INFO("Third thread end");
 }
 
-void fourthThread(void* data)
-{
+void fourthThread(void *data) {
     INFO("Fourth thread start");
 
 #if USE_MUTEX
     mymutex_lock(&mutex);
 #endif
 
-    for(int i = 0; i <= LOOP_ITERATIONS / 2; i++)
-    {
+    for (int i = 0; i <= LOOP_ITERATIONS / 2; i++) {
 #if LOG_ITERATIONS
         INFO("T4 - %d", i);
 #endif

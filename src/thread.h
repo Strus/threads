@@ -12,17 +12,17 @@
 
 #include "mythreads.h"
 
+#define _XOPEN_SOURCE
 #include <ucontext.h>
 
-#define MYTHREADS_STACK_SIZE 1024*64 //< 64kB stack
+#define MYTHREADS_STACK_SIZE 1024 * 64 //< 64kB stack
 
 /// @brief Defines thread state
 ///        MYTHREAD_STATE_NOT_STARTED - thread was created but never started yet
 ///        MYTHREAD_STATE_ACTIVE - thread is processed now
 ///        MYTHREAD_STATE_PREEMPTED - thread was preemted now
 ///        MYTHREAD_STATE_PENDING - thread is pending on mutex
-enum mythread_state
-{
+enum mythread_state {
     MYTHREAD_STATE_NOT_STARTED,
     MYTHREAD_STATE_ACTIVE,
     MYTHREAD_STATE_PREEMPTED,
@@ -30,8 +30,7 @@ enum mythread_state
 };
 
 /// @brief Represents thread.
-typedef struct thread
-{
+typedef struct thread {
     unsigned int id;
     int priority;
     ucontext_t context;

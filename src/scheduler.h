@@ -10,23 +10,22 @@
 #ifndef THREADS_SCHEDULER_H
 #define THREADS_SCHEDULER_H
 
+#include "carousel.h"
 #include "myscheduler.h"
 #include "thread.h"
-#include "carousel.h"
 
+#include <signal.h>
 #include <stdbool.h>
 #include <ucontext.h>
-#include <signal.h>
 
 #define SCHEDULER_PREEMPTION_INTERVAL_USECONDS 1000
 
 /// @brief Represents simple round-robin scheduler.
-typedef struct
-{
-    threadcarousel_t* carousel;
-    threadcarousel_t* pending_carousel;
-    mythread_t* current_thread;
-    mythread_t* dead_thread;
+typedef struct {
+    threadcarousel_t *carousel;
+    threadcarousel_t *pending_carousel;
+    mythread_t *current_thread;
+    mythread_t *dead_thread;
     unsigned int number_of_threads;
     bool started;
     ucontext_t main_context;
@@ -34,11 +33,11 @@ typedef struct
 
 /// @brief Registers thread in scheduler.
 /// @param thread Thread to register.
-int scheduler_register_thread(mythread_t* thread);
+int scheduler_register_thread(mythread_t *thread);
 
 /// @brief Returns current thread selected in scheduler.
 /// @return Current thread selected in scheduler.
-mythread_t* scheduler_get_current_thread();
+mythread_t *scheduler_get_current_thread();
 
 /// @brief Disables preemption.
 void scheduler_disable_preemption();
@@ -67,7 +66,7 @@ void scheduler_alarm_signal_handler(int signal);
 
 /// @brief Returns main scheduler context. Every thread context should link to this context.
 /// @return Pointer to main scheduler context.
-ucontext_t* scheduler_get_main_context();
+ucontext_t *scheduler_get_main_context();
 
 /// @brief Kills thread of given id.
 /// @param tid Id of thread to kill

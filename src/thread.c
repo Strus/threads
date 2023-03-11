@@ -8,25 +8,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "thread.h"
-#include "scheduler.h"
 #include "logging.h"
+#include "scheduler.h"
 
-#include <malloc.h>
 #include <errno.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-int mythreads_start(mythread_func func, void* args)
-{
-    mythread_t* thread = (mythread_t*)malloc(sizeof(mythread_t));
-    if(thread == NULL)
-    {
+int mythreads_start(mythread_func func, void *args) {
+    mythread_t *thread = (mythread_t *)malloc(sizeof(mythread_t));
+    if (thread == NULL) {
         ERROR("malloc() failed: %s.", strerror(errno));
         return 0;
     }
 
-    if(getcontext(&thread->context) == -1)
-    {
+    if (getcontext(&thread->context) == -1) {
         ERROR("Error while obtaining thread contex: %s", strerror(errno));
         free(thread);
         return 0;
@@ -38,8 +34,7 @@ int mythreads_start(mythread_func func, void* args)
 
     makecontext(&thread->context, (void (*)(void))func, 1, args);
 
-    if(scheduler_register_thread(thread) == -1)
-    {
+    if (scheduler_register_thread(thread) == -1) {
         INFO("Failed to register thread in scheduler.");
         free(thread);
         return 0;
@@ -48,16 +43,14 @@ int mythreads_start(mythread_func func, void* args)
     return thread->id;
 }
 
-int mythread_exit(void)
-{
+int mythread_exit(void) {
     int tid = scheduler_get_current_thread()->id;
 
     INFO("Thread with id: %d exiting.", tid);
     return scheduler_kill_thread(tid);
 }
 
-int mythread_kill(int tid)
-{
+int mythread_kill(int tid) {
     INFO("Killing thread with id: %d", tid);
     return scheduler_kill_thread(tid);
 }

@@ -10,32 +10,27 @@
 #include "mymutex.h"
 #include "scheduler.h"
 
-#include <stdlib.h>
-#include <mymutex.h>
 #include <logging.h>
+#include <mymutex.h>
+#include <stdlib.h>
 
-void mymutext_init(mymutex_t* mutex)
-{
+void mymutext_init(mymutex_t *mutex) {
     mutex->locked = false;
     mutex->owner = NULL;
 }
 
-int mymutex_lock(mymutex_t* mutex)
-{
+int mymutex_lock(mymutex_t *mutex) {
     scheduler_disable_preemption();
 
-    if(mutex->locked)
-    {
+    if (mutex->locked) {
         INFO("Mutex already locked. Owner id: %d. Waiting.", mutex->owner->id);
-        if(mutex->owner == scheduler_get_current_thread())
-        {
+        if (mutex->owner == scheduler_get_current_thread()) {
             INFO("Mutex cannot be locked twice by the same thread. Thread id: %d", scheduler_get_current_thread()->id);
             return -1;
         }
 
         // Increase owner priority to prevent priority inversion.
-        if(mutex->owner->priority < scheduler_get_current_thread()->priority)
-        {
+        if (mutex->owner->priority < scheduler_get_current_thread()->priority) {
             mutex->owner->priority = scheduler_get_current_thread()->priority;
         }
 
@@ -55,17 +50,14 @@ int mymutex_lock(mymutex_t* mutex)
     return 0;
 }
 
-int mymutex_unlock(mymutex_t* mutex)
-{
+int mymutex_unlock(mymutex_t *mutex) {
     scheduler_disable_preemption();
 
-    if(mutex->owner != scheduler_get_current_thread())
-    {
+    if (mutex->owner != scheduler_get_current_thread()) {
         INFO("Mutex can only be unlocked by it's owner!\n"
-                    "    Current thread id: %d"
-                    "    Owner id: %d"
-                    , scheduler_get_current_thread()->id
-                    , mutex->owner->id);
+             "    Current thread id: %d"
+             "    Owner id: %d",
+             scheduler_get_current_thread()->id, mutex->owner->id);
 
         // Make current thread pending, so he will be not take into consideration during next preemption
         // until mutex will be unlocked
@@ -75,8 +67,7 @@ int mymutex_unlock(mymutex_t* mutex)
         scheduler_switch_to_next_thread();
     }
 
-    if(!mutex->locked)
-    {
+    if (!mutex->locked) {
         INFO("Cannot unlock not locked mutex.");
         return -1;
     }

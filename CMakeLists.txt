@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.6)
 project(threads)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -Werror -Wno-deprecated-declarations")
 set(EXECUTABLE_OUTPUT_PATH bin)
 set(APP_NAME threadsTestApp)
 

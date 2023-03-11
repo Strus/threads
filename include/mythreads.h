@@ -10,13 +10,13 @@
 #ifndef THREADS_MYTHREADS_H
 #define THREADS_MYTHREADS_H
 
-typedef void (*mythread_func)(void*);
+typedef void (*mythread_func)(void *);
 
 /// @brief Registers new thread in scheduler.
 /// @param func Pointer to thread function.
 /// @param args Arguments of thread function.
 /// @return Thread id when successful, 0 on error.
-int mythreads_start(mythread_func func, void* args);
+int mythreads_start(mythread_func func, void *args);
 
 /// @brief End current thread
 /// @return Nothing when successful
