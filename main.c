@@ -12,9 +12,9 @@
 #include "myscheduler.h"
 #include "mythreads.h"
 
-#define LOOP_ITERATIONS 1000000
+#define LOOP_ITERATIONS 100000
 #define LOG_ITERATIONS 0
-#define USE_MUTEX 0
+#define USE_MUTEX 1
 
 mymutex_t mutex;
 
